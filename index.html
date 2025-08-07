@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberSec Lab Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #00ff41;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0, 255, 65, 0.1);
+            border: 1px solid #00ff41;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px #00ff41;
+        }
+
+        .lab-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .lab-section {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #00ff41;
+            border-radius: 10px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .lab-section:hover {
+            box-shadow: 0 0 25px rgba(0, 255, 65, 0.5);
+            transform: translateY(-5px);
+        }
+
+        .lab-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00ff41, transparent);
+            animation: scan 3s infinite;
+        }
+
+        @keyframes scan {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .section-title {
+            color: #ff6b35;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .terminal {
+            background: #000;
+            border: 1px solid #333;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 200px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .terminal::before {
+            content: '● ● ●';
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            color: #666;
+            font-size: 12px;
+        }
+
+        .command-input {
+            background: transparent;
+            border: none;
+            color: #00ff41;
+            font-family: inherit;
+            font-size: inherit;
+            width: 100%;
+            outline: none;
+            margin-top: 10px;
+            border-bottom: 1px solid #333;
+            padding: 5px 0;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #ff6b35, #f7931e);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.4);
+        }
+
+        .btn.danger {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+
+        .btn.success {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+        }
+
+        .vulnerability-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .vulnerability-list li {
+            padding: 8px;
+            margin: 5px 0;
+            background: rgba(255, 107, 53, 0.1);
+            border-left: 3px solid #ff6b35;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .vulnerability-list li:hover {
+            background: rgba(255, 107, 53, 0.2);
+        }
+
+        .network-diagram {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+
+        .network-node {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .network-node.attacker {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+
+        .network-node.target {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+        }
+
+        .network-node.firewall {
+            background: linear-gradient(45deg, #f39c12, #e67e22);
+        }
+
+        .network-node:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        }
+
+        .progress-bar {
+            background: #333;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 20px;
+            background: linear-gradient(90deg, #00ff41, #39ff14);
+            width: 0%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #000;
+            font-weight: bold;
+        }
+
+        .log-entry {
+            padding: 5px;
+            margin: 2px 0;
+            border-left: 2px solid #666;
+            font-size: 12px;
+        }
+
+        .log-entry.warning {
+            border-left-color: #f39c12;
+            color: #f39c12;
+        }
+
+        .log-entry.error {
+            border-left-color: #e74c3c;
+            color: #e74c3c;
+        }
+
+        .log-entry.success {
+            border-left-color: #00ff41;
+            color: #00ff41;
+        }
+
+        .exploit-form {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .exploit-form input, .exploit-form textarea {
+            width: 100%;
+            background: #222;
+            border: 1px solid #555;
+            color: #00ff41;
+            padding: 8px;
+            border-radius: 3px;
+            margin: 5px 0;
+            font-family: inherit;
+        }
+
+        .matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.1;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .cursor {
+            animation: blink 1s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="matrix-bg" id="matrixBg"></div>
+    
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ CyberSec Lab Simulator</h1>
+            <p>Interactive Cybersecurity Training Environment</p>
+        </div>
+
+        <div class="lab-grid">
+            <!-- Network Reconnaissance -->
+            <div class="lab-section">
+                <h2 class="section-title">🔍 Network Reconnaissance</h2>
+                <div class="network-diagram">
+                    <div class="network-node attacker" onclick="selectNode('attacker')">Kali Linux<br>Attacker</div>
+                    <div class="network-node firewall" onclick="selectNode('firewall')">pfSense<br>Firewall</div>
+                    <div class="network-node target" onclick="selectNode('target1')">Ubuntu<br>DVWA</div>
+                    <div class="network-node target" onclick="selectNode('target2')">Windows<br>Metasploitable</div>
+                </div>
+                <div class="terminal" id="nmapTerminal">
+                    <div id="nmapOutput">root@kali:~# <span class="cursor">_</span></div>
+                    <input type="text" class="command-input" placeholder="Enter nmap command..." onkeypress="handleNmapCommand(event)" id="nmapInput">
+                </div>
+                <button class="btn" onclick="runNetworkScan()">Run Network Scan</button>
+                <button class="btn" onclick="runPortScan()">Port Scan Target</button>
+            </div>
+
+            <!-- Web Application Testing -->
+            <div class="lab-section">
+                <h2 class="section-title">🌐 Web Application Testing</h2>
+                <div class="exploit-form">
+                    <h3>DVWA SQL Injection Lab</h3>
+                    <input type="text" placeholder="User ID" id="sqlInput" value="1">
+                    <button class="btn danger" onclick="testSQLInjection()">Test SQL Injection</button>
+                    <div class="terminal" id="sqlOutput">
+                        <div>Database Query Results:</div>
+                        <div id="sqlResults">Ready for testing...</div>
+                    </div>
+                </div>
+                <div class="exploit-form">
+                    <h3>XSS Testing</h3>
+                    <textarea placeholder="Enter XSS payload..." id="xssInput">&lt;script&gt;alert('XSS')&lt;/script&gt;</textarea>
+                    <button class="btn danger" onclick="testXSS()">Test XSS</button>
+                    <div id="xssResults"></div>
+                </div>
+            </div>
+
+            <!-- Vulnerability Scanner -->
+            <div class="lab-section">
+                <h2 class="section-title">🔍 Vulnerability Assessment</h2>
+                <button class="btn" onclick="scanVulnerabilities()">Start Vulnerability Scan</button>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="scanProgress">0%</div>
+                </div>
+                <ul class="vulnerability-list" id="vulnList">
+                    <li onclick="exploreVuln('cve-2021-44228')">CVE-2021-44228 (Log4Shell) - Critical</li>
+                    <li onclick="exploreVuln('cve-2021-34527')">CVE-2021-34527 (PrintNightmare) - Critical</li>
+                    <li onclick="exploreVuln('cve-2020-1472')">CVE-2020-1472 (Zerologon) - Critical</li>
+                    <li onclick="exploreVuln('cve-2019-0708')">CVE-2019-0708 (BlueKeep) - Critical</li>
+                </ul>
+            </div>
+
+            <!-- Exploit Framework -->
+            <div class="lab-section">
+                <h2 class="section-title">💥 Metasploit Framework</h2>
+                <div class="terminal" id="metasploitTerminal">
+                    <div id="metasploitOutput">msf6 > <span class="cursor">_</span></div>
+                </div>
+                <button class="btn danger" onclick="loadExploit()">Load Exploit</button>
+                <button class="btn" onclick="setTarget()">Set Target</button>
+                <button class="btn danger" onclick="runExploit()">Run Exploit</button>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="exploitProgress">Ready</div>
+                </div>
+            </div>
+
+            <!-- Password Cracking -->
+            <div class="lab-section">
+                <h2 class="section-title">🔐 Password Security</h2>
+                <div class="exploit-form">
+                    <h3>John the Ripper - Hash Cracking</h3>
+                    <input type="text" placeholder="Enter hash to crack..." id="hashInput" value="5d41402abc4b2a76b9719d911017c592">
+                    <button class="btn" onclick="crackPassword()">Crack Password</button>
+                    <div class="terminal" id="johnOutput">
+                        <div>Hash cracking results will appear here...</div>
+                    </div>
+                </div>
+                <div class="exploit-form">
+                    <h3>Brute Force Attack</h3>
+                    <input type="text" placeholder="Target service" value="SSH (192.168.1.100:22)">
+                    <button class="btn danger" onclick="bruteForceSim()">Start Brute Force</button>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="bruteProgress">0%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SIEM Dashboard -->
+            <div class="lab-section">
+                <h2 class="section-title">📊 SIEM Dashboard</h2>
+                <div class="terminal" id="siemLogs" style="max-height: 150px;">
+                    <div class="log-entry">System initialized - ELK Stack ready</div>
+                </div>
+                <button class="btn success" onclick="generateAlert()">Generate Security Alert</button>
+                <button class="btn" onclick="analyzeLog()">Analyze Logs</button>
+                <div style="margin-top: 10px;">
+                    <small>Events today: <span id="eventCount">247</span> | Threats blocked: <span id="threatCount">12</span></small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Matrix rain effect
+        function createMatrixRain() {
+            const canvas = document.createElement('canvas');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            canvas.style.position = 'fixed';
+            canvas.style.top = '0';
+            canvas.style.left = '0';
+            canvas.style.zIndex = '-1';
+            canvas.style.opacity = '0.1';
+            document.getElementById('matrixBg').appendChild(canvas);
+
+            const ctx = canvas.getContext('2d');
+            const chars = '01';
+            const columns = canvas.width / 20;
+            const drops = Array(Math.floor(columns)).fill(1);
+
+            function draw() {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#00ff41';
+                ctx.font = '15px monospace';
+
+                for (let i = 0; i < drops.length; i++) {
+                    const text = chars[Math.floor(Math.random() * chars.length)];
+                    ctx.fillText(text, i * 20, drops[i] * 20);
+
+                    if (drops[i] * 20 > canvas.height && Math.random() > 0.975) {
+                        drops[i] = 0;
+                    }
+                    drops[i]++;
+                }
+            }
+
+            setInterval(draw, 50);
+        }
+
+        createMatrixRain();
+
+        // Network scanning simulation
+        function runNetworkScan() {
+            const output = document.getElementById('nmapOutput');
+            output.innerHTML = 'root@kali:~# nmap -sn 192.168.100.0/24<br>';
+            
+            const hosts = [
+                '192.168.100.1 - Router/Gateway',
+                '192.168.100.10 - Ubuntu Server (DVWA)',
+                '192.168.100.20 - Windows 10 (Vulnerable)',
+                '192.168.100.30 - pfSense Firewall'
+            ];
+
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < hosts.length) {
+                    output.innerHTML += `Host is up: ${hosts[i]}<br>`;
+                    i++;
+                } else {
+                    output.innerHTML += '<br>Scan complete. 4 hosts discovered.<br>root@kali:~# <span class="cursor">_</span>';
+                    clearInterval(interval);
+                }
+            }, 1000);
+        }
+
+        function runPortScan() {
+            const output = document.getElementById('nmapOutput');
+            output.innerHTML = 'root@kali:~# nmap -sV 192.168.100.10<br>';
+            
+            const ports = [
+                '22/tcp open ssh OpenSSH 7.4',
+                '80/tcp open http Apache 2.4.29',
+                '443/tcp open https Apache 2.4.29',
+                '3306/tcp open mysql MySQL 5.7.33'
+            ];
+
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < ports.length) {
+                    output.innerHTML += `${ports[i]}<br>`;
+                    i++;
+                } else {
+                    output.innerHTML += '<br>Port scan complete.<br>root@kali:~# <span class="cursor">_</span>';
+                    clearInterval(interval);
+                }
+            }, 800);
+        }
+
+        // SQL Injection simulation
+        function testSQLInjection() {
+            const input = document.getElementById('sqlInput').value;
+            const results = document.getElementById('sqlResults');
+            
+            if (input.includes("'") || input.includes('OR') || input.includes('1=1')) {
+                results.innerHTML = `
+                    <div class="log-entry error">SQL Injection detected!</div>
+                    <div class="log-entry">Extracted data:</div>
+                    <div>User: admin | Password: 5f4dcc3b5aa765d61d8327deb882cf99</div>
+                    <div>User: guest | Password: 098f6bcd4621d373cade4e832627b4f6</div>
+                    <div class="log-entry warning">Vulnerability: Unsanitized input allows data extraction</div>
+                `;
+            } else {
+                results.innerHTML = `
+                    <div class="log-entry success">Query executed normally</div>
+                    <div>User ID ${input}: John Doe</div>
+                `;
+            }
+        }
+
+        // XSS testing simulation
+        function testXSS() {
+            const input = document.getElementById('xssInput').value;
+            const results = document.getElementById('xssResults');
+            
+            if (input.includes('<script>') || input.includes('javascript:')) {
+                results.innerHTML = '<div class="log-entry error">⚠️ XSS Vulnerability Detected! In a real scenario, this could execute malicious code.</div>';
+                // Simulate alert without actually executing the script
+                setTimeout(() => {
+                    alert('XSS payload would execute here in a vulnerable application');
+                }, 1000);
+            } else {
+                results.innerHTML = '<div class="log-entry success">Input sanitized - No XSS detected</div>';
+            }
+        }
+
+        // Vulnerability scanning
+        function scanVulnerabilities() {
+            const progress = document.getElementById('scanProgress');
+            let width = 0;
+            
+            const interval = setInterval(() => {
+                width += 10;
+                progress.style.width = width + '%';
+                progress.textContent = width + '%';
+                
+                if (width >= 100) {
+                    clearInterval(interval);
+                    progress.textContent = 'Scan Complete - 4 Critical Vulnerabilities Found';
+                    progress.style.background = 'linear-gradient(90deg, #e74c3c, #c0392b)';
+                }
+            }, 200);
+        }
+
+        function exploreVuln(cve) {
+            alert(`Exploring ${cve}:\n\nThis vulnerability allows remote code execution. In a real lab, you would:\n\n1. Research the vulnerability details\n2. Find or create an exploit\n3. Test against vulnerable systems\n4. Document findings\n5. Develop mitigation strategies`);
+        }
+
+        // Metasploit simulation
+        function loadExploit() {
+            const output = document.getElementById('metasploitOutput');
+            output.innerHTML = `
+                msf6 > use exploit/linux/http/apache_mod_cgi_bash_env_exec<br>
+                msf6 exploit(linux/http/apache_mod_cgi_bash_env_exec) > <span class="cursor">_</span>
+            `;
+        }
+
+        function setTarget() {
+            const output = document.getElementById('metasploitOutput');
+            output.innerHTML += `<br>set RHOSTS 192.168.100.10<br>RHOSTS => 192.168.100.10<br>msf6 exploit(linux/http/apache_mod_cgi_bash_env_exec) > <span class="cursor">_</span>`;
+        }
+
+        function runExploit() {
+            const progress = document.getElementById('exploitProgress');
+            const output = document.getElementById('metasploitOutput');
+            
+            output.innerHTML += `<br>exploit<br>[*] Started reverse TCP handler<br>[*] Sending exploit...`;
+            
+            let width = 0;
+            const interval = setInterval(() => {
+                width += 20;
+                progress.style.width = width + '%';
+                progress.textContent = 'Exploiting...';
+                
+                if (width >= 100) {
+                    clearInterval(interval);
+                    progress.textContent = 'Shell Obtained!';
+                    progress.style.background = 'linear-gradient(90deg, #e74c3c, #c0392b)';
+                    output.innerHTML += `<br>[+] Exploit completed successfully<br>[*] Command shell session 1 opened<br>shell> <span class="cursor">_</span>`;
+                }
+            }, 500);
+        }
+
+        // Password cracking simulation
+        function crackPassword() {
+            const hash = document.getElementById('hashInput').value;
+            const output = document.getElementById('johnOutput');
+            
+            output.innerHTML = `
+                <div>john --format=Raw-MD5 hash.txt</div>
+                <div class="log-entry">Loaded 1 password hash (Raw-MD5)</div>
+                <div class="log-entry">Cracking in progress...</div>
+            `;
+            
+            setTimeout(() => {
+                if (hash === '5d41402abc4b2a76b9719d911017c592') {
+                    output.innerHTML += `<div class="log-entry success">Password cracked: "hello"</div>`;
+                } else if (hash === '098f6bcd4621d373cade4e832627b4f6') {
+                    output.innerHTML += `<div class="log-entry success">Password cracked: "test"</div>`;
+                } else {
+                    output.innerHTML += `<div class="log-entry warning">Password not found in wordlist</div>`;
+                }
+            }, 3000);
+        }
+
+        function bruteForceSim() {
+            const progress = document.getElementById('bruteProgress');
+            let width = 0;
+            let attempts = 0;
+            
+            const interval = setInterval(() => {
+                width += 2;
+                attempts += Math.floor(Math.random() * 50) + 10;
+                progress.style.width = width + '%';
+                progress.textContent = `${attempts} attempts`;
+                
+                if (width >= 100) {
+                    clearInterval(interval);
+                    progress.textContent = 'Password found: admin123';
+                    progress.style.background = 'linear-gradient(90deg, #27ae60, #2ecc71)';
+                }
+            }, 200);
+        }
+
+        // SIEM simulation
+        function generateAlert() {
+            const logs = document.getElementById('siemLogs');
+            const alerts = [
+                'Multiple failed login attempts detected from 192.168.100.50',
+                'Suspicious SQL query pattern detected on web server',
+                'Port scan detected from external IP',
+                'Malware signature found in email attachment',
+                'Unusual outbound traffic to suspicious domain'
+            ];
+            
+            const alert = alerts[Math.floor(Math.random() * alerts.length)];
+            const timestamp = new Date().toLocaleTimeString();
+            logs.innerHTML += `<div class="log-entry error">[${timestamp}] ALERT: ${alert}</div>`;
+            logs.scrollTop = logs.scrollHeight;
+            
+            // Update counters
+            document.getElementById('eventCount').textContent = parseInt(document.getElementById('eventCount').textContent) + 1;
+            document.getElementById('threatCount').textContent = parseInt(document.getElementById('threatCount').textContent) + 1;
+        }
+
+        function analyzeLog() {
+            const logs = document.getElementById('siemLogs');
+            const timestamp = new Date().toLocaleTimeString();
+            logs.innerHTML += `<div class="log-entry success">[${timestamp}] Analysis complete: 3 threats correlated, 1 false positive filtered</div>`;
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        // Handle nmap commands
+        function handleNmapCommand(event) {
+            if (event.key === 'Enter') {
+                const input = event.target;
+                const command = input.value;
+                const output = document.getElementById('nmapOutput');
+                
+                output.innerHTML += `<br>root@kali:~# ${command}<br>`;
+                
+                if (command.includes('nmap')) {
+                    output.innerHTML += 'Command executed. Use the buttons above for simulated results.<br>';
+                } else {
+                    output.innerHTML += `bash: ${command}: command not found<br>`;
+                }
+                
+                output.innerHTML += 'root@kali:~# <span class="cursor">_</span>';
+                input.value = '';
+            }
+        }
+
+        // Node selection for network diagram
+        function selectNode(nodeType) {
+            const nodeDescriptions = {
+                'attacker': 'Kali Linux - Your penetration testing platform with tools like nmap, metasploit, and burp suite',
+                'firewall': 'pfSense Firewall - Network security appliance monitoring and filtering traffic',
+                'target1': 'Ubuntu DVWA - Deliberately vulnerable web application for testing web security',
+                'target2': 'Windows Metasploitable - Intentionally vulnerable Windows system for network testing'
+            };
+            
+            alert(`Selected: ${nodeDescriptions[nodeType]}`);
+        }
+
+        // Initialize some dynamic content
+        setInterval(() => {
+            const eventCount = document.getElementById('eventCount');
+            if (eventCount) {
+                eventCount.textContent = parseInt(eventCount.textContent) + Math.floor(Math.random() * 3);
+            }
+        }, 10000);
+    </script>
+</body>
+</html>
