@@ -3,8 +3,7 @@
 A web-based cybersecurity training environment that simulates real penetration testing scenarios without requiring complex virtual machine setups.
 
 ## 🚀 Live Demo
-🌐 **[Try the Simulator Live!](https://yourusername.github.io/cybersec-lab-simulator)**
-*(Replace 'yourusername' with your actual GitHub username after deployment)*
+🌐 [Try the Simulator Live!](https://github.com/lmayo149-arch/cybersec-lab-simulator)
 
 ## ✨ Features
 
@@ -173,5 +172,6 @@ This means you can:
 ---
 
 **⭐ If this project helped you learn cybersecurity, please give it a star on GitHub!**
+
 
 *Last updated: [Current Date]*
